@@ -1,40 +1,41 @@
-import { ENV } from '../config/env.js';
+import axios from 'axios';
 import { HttpError } from '../middlewares/errorHandler.js';
+import { ENV } from '../config/env.js';
 
-const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
-
-type TaskPointUser = {
+export type TaskPointUser = {
   id: string;
   name?: string;
   ethAddress: string;
 };
 
-export type DecodedUser = TaskPointUser & { token?: string };
+const isEthAddress = (value: string) => /^0x[a-fA-F0-9]{40}$/.test(value);
 
-export const decodeToken = async (token: string): Promise<DecodedUser> => {
-  if (ENV.testAuth && ETH_ADDRESS_REGEX.test(token)) {
+const taskPointPost = async <T>(path: string, payload: Record<string, unknown>) => {
+  if (!ENV.taskPointUrl) {
+    throw new HttpError(500, 'TASK_POINT_URL not configured');
+  }
+  const url = `${ENV.taskPointUrl}${path}`;
+  const { data } = await axios.post<T>(url, payload, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  return data;
+};
+
+export const decodeToken = async (token: string) => {
+  if (ENV.testAuth && isEthAddress(token)) {
     const lower = token.toLowerCase();
     return { id: lower, name: `test-${lower.slice(-4)}`, ethAddress: lower, token };
   }
 
-  if (!ENV.taskPointUrl) {
-    throw new HttpError(500, 'TASK_POINT_URL is not configured; enable TEST_AUTH for local runs');
+  try {
+    const { userInfo } = (await taskPointPost<{ userInfo: TaskPointUser }>('/user/decodeToken', { token })) ?? {};
+    if (!userInfo?.id || !userInfo.ethAddress) {
+      throw new HttpError(401, 'Invalid token');
+    }
+    return { ...userInfo, ethAddress: userInfo.ethAddress.toLowerCase(), token };
+  } catch (error) {
+    throw new HttpError(401, 'Invalid token', error instanceof Error ? { message: error.message } : undefined);
   }
-
-  const response = await fetch(`${ENV.taskPointUrl}/user/decodeToken`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ token }),
-  });
-
-  if (!response.ok) {
-    throw new HttpError(401, 'Invalid authentication token');
-  }
-
-  const { userInfo } = (await response.json()) as { userInfo: TaskPointUser };
-  if (!userInfo?.id || !userInfo.ethAddress) {
-    throw new HttpError(401, 'Malformed auth payload');
-  }
-
-  return { ...userInfo, ethAddress: userInfo.ethAddress.toLowerCase(), token };
 };
