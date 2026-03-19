@@ -175,6 +175,34 @@ describe('Task & Settings APIs', () => {
     expect(res.status).toBe(409);
   });
 
+  it('pauses, resumes, and cancels a timer via REST', async () => {
+    const token = signToken();
+    const taskId = await createTask(app, token, 'pause-flow');
+    const startRes = await request(app)
+      .post('/api/v1/timer/start')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ phase: 'FOCUS', durationSeconds: 1500, taskId });
+    const sessionId = startRes.body.data.id as string;
+
+    const pauseRes = await request(app)
+      .post(`/api/v1/timer/${sessionId}/pause`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(pauseRes.status).toBe(200);
+    expect(pauseRes.body.data.status).toBe('PAUSED');
+
+    const resumeRes = await request(app)
+      .post(`/api/v1/timer/${sessionId}/resume`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(resumeRes.status).toBe(200);
+    expect(resumeRes.body.data.status).toBe('RUNNING');
+
+    const cancelRes = await request(app)
+      .post(`/api/v1/timer/${sessionId}/cancel`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(cancelRes.status).toBe(200);
+    expect(cancelRes.body.data.status).toBe('CANCELLED');
+  });
+
   it('completes a task via REST', async () => {
     const token = signToken();
     const taskId = await createTask(app, token, 'complete-me');
@@ -198,6 +226,30 @@ describe('Task & Settings APIs', () => {
       .set('Authorization', `Bearer ${token}`);
     expect(skipRes.status).toBe(200);
     expect(skipRes.body.data.status).toBe('COMPLETED');
+  });
+
+  it('serves timer ETA from cache when subsequent calls happen within TTL', async () => {
+    const token = signToken();
+    const taskId = await createTask(app, token, 'eta-cache');
+    const startRes = await request(app)
+      .post('/api/v1/timer/start')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ phase: 'FOCUS', durationSeconds: 1500, taskId });
+    const sessionId = startRes.body.data.id as string;
+
+    const firstEta = await request(app)
+      .get('/api/v1/timer/eta')
+      .set('Authorization', `Bearer ${token}`);
+    expect(firstEta.status).toBe(200);
+    expect(firstEta.body.data.sessionId).toBe(sessionId);
+
+    await AppDataSource.getRepository(TimerSessionEntity).update({ id: sessionId }, { status: 'COMPLETED' });
+
+    const secondEta = await request(app)
+      .get('/api/v1/timer/eta')
+      .set('Authorization', `Bearer ${token}`);
+    expect(secondEta.status).toBe(200);
+    expect(secondEta.body.data.sessionId).toBe(sessionId);
   });
 
   it('serves GraphQL task query', async () => {

@@ -3,17 +3,8 @@ import { statsQueue } from '../infra/bullmq.js';
 import { initializeDatabase } from '../infra/datasource.js';
 import { verifyRedis } from '../infra/redis.js';
 import { logger } from '../infra/logger.js';
-import { recordTimerStats } from '../services/stats.service.js';
+import { processStatsJob, type TimerCompletedJob } from './statsHandler.js';
 import { ENV } from '../config/env.js';
-
-type TimerCompletedJob = {
-  sessionId: string;
-  userId: string;
-  taskId?: string | null;
-  phase: 'FOCUS' | 'SHORT_BREAK' | 'LONG_BREAK';
-  actualElapsedSeconds: number;
-  completedAt?: string;
-};
 
 const bootstrap = async () => {
   await initializeDatabase();
@@ -23,12 +14,7 @@ const bootstrap = async () => {
     statsQueue.name,
     async (job) => {
       const payload = job.data as TimerCompletedJob;
-      await recordTimerStats({
-        userId: payload.userId,
-        phase: payload.phase,
-        durationSeconds: payload.actualElapsedSeconds,
-        completedAt: payload.completedAt ? new Date(payload.completedAt) : undefined,
-      });
+      await processStatsJob(payload);
       logger.info('stats drain processed', { sessionId: payload.sessionId });
     },
     {
