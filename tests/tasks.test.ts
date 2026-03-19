@@ -7,7 +7,7 @@ import { TaskEntity } from '../src/entities/task.entity.ts';
 import { UserSettingsEntity } from '../src/entities/user-settings.entity.ts';
 import { TimerSessionEntity } from '../src/entities/timer-session.entity.ts';
 
-const TEST_TOKEN = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+const TEST_TOKEN = process.env.E2E_AUTH_TOKEN ?? '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
 const signToken = () => TEST_TOKEN;
 

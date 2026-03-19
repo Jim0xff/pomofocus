@@ -6,7 +6,7 @@ import { AppDataSource } from '../src/infra/datasource.ts';
 import { TaskEntity } from '../src/entities/task.entity.ts';
 import { TimerSessionEntity } from '../src/entities/timer-session.entity.ts';
 
-const TEST_TOKEN = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+const TEST_TOKEN = process.env.E2E_AUTH_TOKEN ?? '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 const authHeaders = { Authorization: `Bearer ${TEST_TOKEN}` };
 
 const graphRequest = (app: Application, query: string, variables?: Record<string, unknown>) =>
