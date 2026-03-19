@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { getRequestContext } from '../infra/requestContext.js';
-import { decodeAuthToken } from '../infra/authClient.js';
+import { decodeToken } from '../infra/taskPointClient.js';
 
-export type AuthUser = { id: string; email?: string; ethAddress?: string };
+export type AuthUser = { id: string; name?: string; ethAddress?: string; token?: string };
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -16,7 +16,7 @@ export const authMiddleware = (req: Request, _res: Response, next: NextFunction)
     return next();
   }
   const token = header.replace('Bearer ', '');
-  decodeAuthToken(token)
+  decodeToken(token)
     .then((payload) => {
       req.user = payload;
       const ctx = getRequestContext();

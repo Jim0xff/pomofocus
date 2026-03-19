@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import request from 'supertest';
-import jwt from 'jsonwebtoken';
 import type { Application } from 'express';
 import { createServer } from '../src/server.ts';
 import { AppDataSource } from '../src/infra/datasource.ts';
@@ -8,7 +7,9 @@ import { TaskEntity } from '../src/entities/task.entity.ts';
 import { UserSettingsEntity } from '../src/entities/user-settings.entity.ts';
 import { TimerSessionEntity } from '../src/entities/timer-session.entity.ts';
 
-const signToken = () => jwt.sign({ id: 'user-test' }, process.env.JWT_SECRET ?? 'test-secret');
+const TEST_TOKEN = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+const signToken = () => TEST_TOKEN;
 
 const createTask = async (app: Application, token: string, title = 'Task for timer') => {
   const res = await request(app)
