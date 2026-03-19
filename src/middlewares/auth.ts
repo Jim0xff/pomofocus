@@ -1,9 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
-import { ENV } from '../config/env.js';
 import { getRequestContext } from '../infra/requestContext.js';
+import { decodeAuthToken } from '../infra/authClient.js';
 
-export type AuthUser = { id: string };
+export type AuthUser = { id: string; email?: string; ethAddress?: string };
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -17,15 +16,14 @@ export const authMiddleware = (req: Request, _res: Response, next: NextFunction)
     return next();
   }
   const token = header.replace('Bearer ', '');
-  try {
-    const payload = jwt.verify(token, ENV.jwtSecret) as AuthUser;
-    req.user = payload;
-    const ctx = getRequestContext();
-    if (ctx) {
-      ctx.user = payload;
-    }
-  } catch (err) {
-    return next(err);
-  }
-  next();
+  decodeAuthToken(token)
+    .then((payload) => {
+      req.user = payload;
+      const ctx = getRequestContext();
+      if (ctx) {
+        ctx.user = payload;
+      }
+      next();
+    })
+    .catch((err) => next(err));
 };

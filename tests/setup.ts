@@ -5,6 +5,8 @@ process.env.DB_TYPE = 'sqlite';
 process.env.SQLITE_PATH = ':memory:';
 process.env.REDIS_URL = 'redis://localhost:6379';
 process.env.JWT_SECRET = 'test-secret';
+process.env.TEST_AUTH = 'true';
+process.env.AUTH_SERVICE_URL = '';
 
 const redisStore = new Map<string, string>();
 

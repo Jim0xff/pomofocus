@@ -13,7 +13,7 @@ Node.js / TypeScript service that exposes both GraphQL & REST entrypoints for Po
    ```bash
    npm install
    ```
-2. **Create `.env`** (sample values in `.env.example`). Sensitive production/test credentials live in `.env` and are ignored by git.
+2. **Create `.env`** (sample values in `.env.example`). 主要变量包括 `DATABASE_URL`、`REDIS_URL`、`JWT_SECRET`、`AUTH_SERVICE_URL`（生产环境指向真实鉴权服务），以及 `TEST_AUTH`（dev/staging 可设为 true 简化鉴权）。
 3. **Run in development**
    ```bash
    npm run dev

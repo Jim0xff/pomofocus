@@ -26,4 +26,6 @@ export const ENV = {
   redisUrl: required(process.env.REDIS_URL, 'REDIS_URL', 'redis://localhost:6379'),
   bullQueuePrefix: process.env.BULLMQ_PREFIX ?? 'pomofocus',
   jwtSecret: required(process.env.JWT_SECRET, 'JWT_SECRET', 'dev-secret'),
+  authServiceUrl: process.env.AUTH_SERVICE_URL ?? '',
+  testAuth: (process.env.TEST_AUTH ?? 'true') === 'true',
 };
